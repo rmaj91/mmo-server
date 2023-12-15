@@ -87,6 +87,12 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
+    @PostMapping("/ping")
+    public void ping(HttpServletRequest request) {
+        String session = getSessionFromRequestCookie(request);
+        sessionRepository.keepAlive(session);
+    }
+
     private static String getSessionFromRequestCookie(HttpServletRequest request) {
         String session = null;
         Cookie[] cookies = request.getCookies();
