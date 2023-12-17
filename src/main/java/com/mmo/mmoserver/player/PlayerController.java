@@ -5,10 +5,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 
@@ -21,6 +19,19 @@ import static com.mmo.mmoserver.auth.AuthController.SESSION_COOKIE_NAME;
 public class PlayerController {
 
     private final SessionRepository sessionRepository;
+
+    @GetMapping("/state")
+    public ResponseEntity<PlayerState> getState(HttpServletRequest request) {
+        String session = getSessionFromRequestCookie(request);
+        String username = sessionRepository.getUsername(session);
+        log.info("Getting state for player \"{}\".", username);
+
+        PlayerState playerState = new PlayerState();
+        playerState.setPx(0);
+        playerState.setPy(0);
+        playerState.setPz(0);
+        return ResponseEntity.ok(playerState);
+    }
 
     @PostMapping("/state")
     public void updateState(@RequestBody StateUpdateRequest stateUpdateRequest, HttpServletRequest request) {
