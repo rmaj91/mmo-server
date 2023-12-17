@@ -1,6 +1,7 @@
 package com.mmo.mmoserver.player;
 
 import com.mmo.mmoserver.auth.SessionRepository;
+import com.mmo.mmoserver.engine.GameEngine;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import static com.mmo.mmoserver.auth.AuthController.SESSION_COOKIE_NAME;
 public class PlayerController {
 
     private final SessionRepository sessionRepository;
+    private final GameEngine gameEngine;
 
     @GetMapping("/state")
     public ResponseEntity<PlayerState> getState(HttpServletRequest request) {
@@ -26,10 +28,7 @@ public class PlayerController {
         String username = sessionRepository.getUsername(session);
         log.info("Getting state for player \"{}\".", username);
 
-        PlayerState playerState = new PlayerState();
-        playerState.setPx(0);
-        playerState.setPy(0);
-        playerState.setPz(0);
+        PlayerState playerState = gameEngine.getPlayerState(username);
         return ResponseEntity.ok(playerState);
     }
 
@@ -37,14 +36,14 @@ public class PlayerController {
     public void updateState(@RequestBody StateUpdateRequest stateUpdateRequest, HttpServletRequest request) {
         String session = getSessionFromRequestCookie(request);
         String username = sessionRepository.getUsername(session);
-        log.info("Updating state for player \"{}\", to: \"{}\".", username, stateUpdateRequest.getState());
+        gameEngine.setPlayerState(username, stateUpdateRequest.getState());
     }
 
     @PostMapping("/direction")
     public void updateDirection(@RequestBody RotationUpdateRequest rotationUpdateRequest, HttpServletRequest request) {
         String session = getSessionFromRequestCookie(request);
         String username = sessionRepository.getUsername(session);
-        log.info("Updating rotationY for player \"{}\", to:\"{}\".", username, rotationUpdateRequest.getRotationY());
+        gameEngine.setPlayerDirection(username, rotationUpdateRequest.getRotationY());
     }
 
     private static String getSessionFromRequestCookie(HttpServletRequest request) {
