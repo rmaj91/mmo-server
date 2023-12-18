@@ -19,6 +19,12 @@ public class GameEngine {
         start();
     }
 
+    public void clearUsername(String username) {
+        userToPosition.remove(username);
+        userToState.remove(username);
+        userToDirection.remove(username);
+    }
+
     private void start() {
         Runnable runnable = new Runnable() {
             @Override

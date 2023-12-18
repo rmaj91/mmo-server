@@ -1,5 +1,6 @@
 package com.mmo.mmoserver.auth;
 
+import com.mmo.mmoserver.engine.GameEngine;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,18 +23,32 @@ public class SessionRepository {
     Map<String, String> usernameToSession = new HashMap<>();
     Set<String> activeSessions = new HashSet<>();
 
-    @PostConstruct
-    public void cleanUpOldSessions() {
+    private final GameEngine gameEngine;
+
+    public SessionRepository(GameEngine gameEngine) {
+        this.gameEngine = gameEngine;
+        log.info("starting - cleanUpOldSessions process.");
+        cleanUpOldSessions();
+    }
+
+    private void cleanUpOldSessions() {
         scheduler.scheduleAtFixedRate(() -> {
+            try {
                 sessionToUsername.forEach((key, value) -> {
                     if (!activeSessions.contains(key)) {
                         String removedUser = sessionToUsername.remove(key);
                         usernameToSession.remove(removedUser);
-                        log.info("\"{}\" has been logout! because of inactivity.", removedUser);
+                        gameEngine.clearUsername(removedUser);
+
+                        log.info("cleanUpOldSessions \"{}\" has been logout! because of inactivity.", removedUser);
                     }
                 });
                 activeSessions.clear();
-        }, 0, 10, TimeUnit.SECONDS);
+                log.info("cleanUpOldSessions - finished");
+            } catch (Exception e) {
+                log.error("cleanUpOldSessions.", e);
+            }
+        }, 0, 5, TimeUnit.SECONDS);
     }
 
     public void setSession(String username, String session) {
