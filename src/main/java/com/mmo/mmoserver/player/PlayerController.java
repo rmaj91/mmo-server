@@ -26,7 +26,6 @@ public class PlayerController {
     public ResponseEntity<PlayerState> getState(HttpServletRequest request) {
         String session = getSessionFromRequestCookie(request);
         String username = sessionRepository.getUsername(session);
-//        log.info("Getting state for player \"{}\".", username);
 
         PlayerState playerState = gameEngine.getPlayerState(username);
         return ResponseEntity.ok(playerState);

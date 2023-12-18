@@ -57,7 +57,16 @@ public class GameEngine {
     }
 
     public PlayerState getPlayerState(String username) {
-        return userToPosition.getOrDefault(username, new PlayerState(10,0,10));//default position 10,10
+        PlayerState status = userToPosition.getOrDefault(username, new PlayerState(10, 0, 10));//default position 10,10
+        PlayerState toReturn = new PlayerState(status.getPx(), status.getPy(), status.getPz()); //copy because keeping array of players
+        userToPosition.forEach((k,v) -> {
+            if (!k.equals(username)) {
+                PlayerState toAdd = new PlayerState(v.getPx(), v.getPy(), v.getPz());
+                toAdd.setUsername(k);
+                toReturn.getAnotherPlayers().add(toAdd);
+            }
+        });
+        return toReturn;
     }
 
     public void setPlayerDirection(String username, double rotationY) {
