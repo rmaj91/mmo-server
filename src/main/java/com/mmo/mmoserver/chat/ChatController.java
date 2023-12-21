@@ -1,5 +1,8 @@
 package com.mmo.mmoserver.chat;
 
+import com.corundumstudio.socketio.AckRequest;
+import com.corundumstudio.socketio.listener.EventInterceptor;
+import com.corundumstudio.socketio.transport.NamespaceClient;
 import com.mmo.mmoserver.auth.SessionRepository;
 import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import jakarta.servlet.http.Cookie;
@@ -35,6 +38,8 @@ public class ChatController {
             if (chatMsgs.size() > maxChatSize) {
                 chatMsgs.remove(0);
             }
+
+            nettyWebSocketServer.getServer().getBroadcastOperations().sendEvent("chat", chatMsgs);//todo implement to also send after connection
         });
     }
 
@@ -53,15 +58,15 @@ public class ChatController {
 //        }
 //    }
 
-    @GetMapping("/msgs")
-    public ResponseEntity<List<String>> getMsgs(HttpServletRequest request) {
-        boolean loggedIn = sessionRepository.isSessionExist(getSessionFromRequestCookie(request));
-        if (!loggedIn) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        log.info("returning chat: {}", chatMsgs);
-        return ResponseEntity.ok(chatMsgs);
-    }
+//    @GetMapping("/msgs")
+//    public ResponseEntity<List<String>> getMsgs(HttpServletRequest request) {
+//        boolean loggedIn = sessionRepository.isSessionExist(getSessionFromRequestCookie(request));
+//        if (!loggedIn) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//        }
+//        log.info("returning chat: {}", chatMsgs);
+//        return ResponseEntity.ok(chatMsgs);
+//    }
 
     private static String getSessionFromRequestCookie(HttpServletRequest request) {
         String session = null;
