@@ -41,6 +41,10 @@ public class ChatController {
 
             nettyWebSocketServer.getServer().getBroadcastOperations().sendEvent("chat", chatMsgs);//todo implement to also send after connection
         });
+
+        nettyWebSocketServer.getServer().addEventListener("init-chat", ChatMessage.class, (client, data, ackSender) -> {
+            client.sendEvent("chat", chatMsgs);
+        });
     }
 
     @Autowired
