@@ -17,42 +17,27 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class SessionRepository {
 
-    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    Map<String, String> sessionToUsername = new HashMap<>();
-    Map<String, String> usernameToSession = new HashMap<>();
-    Set<String> activeSessions = new HashSet<>();
+
+    public Map<String, String> sessionToUsername = new HashMap<>();
+    public Map<String, String> usernameToSession = new HashMap<>();
+    public Set<String> activeSessions = new HashSet<>();
+    public Map<String, String> clientIdToUsername = new HashMap<>();
+    public Map<String, String> usernameToClientId = new HashMap<>();
 
     @Autowired
     private LoginHistoryRepo loginHistoryRepo;
 
-    private final GameEngine gameEngine;
+//    private final GameEngine gameEngine;
 
-    public SessionRepository(GameEngine gameEngine) {
-        this.gameEngine = gameEngine;
+//    public SessionRepository(GameEngine gameEngine) {
+    public SessionRepository() {
+//        this.gameEngine = gameEngine;
         log.info("starting - cleanUpOldSessions process.");
-        cleanUpOldSessions();
+//        cleanUpOldSessions();
     }
 
-    private void cleanUpOldSessions() {
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                sessionToUsername.forEach((key, value) -> {
-                    if (!activeSessions.contains(key)) {
-                        String removedUser = sessionToUsername.remove(key);
-                        usernameToSession.remove(removedUser);
-                        gameEngine.clearUsername(removedUser);
 
-                        log.info("cleanUpOldSessions \"{}\" has been logout! because of inactivity.", removedUser);
-                    }
-                });
-                activeSessions.clear();
-                log.info("cleanUpOldSessions - finished");
-            } catch (Exception e) {
-                log.error("cleanUpOldSessions.", e);
-            }
-        }, 0, 5, TimeUnit.SECONDS);
-    }
 
     public void setSession(String username, String session) {
         sessionToUsername.put(session, username);
@@ -85,5 +70,13 @@ public class SessionRepository {
 
     public void keepAlive(String session) {
         activeSessions.add(session);
+    }
+
+    public Map<String, String> getClientIdToUsername() {
+        return clientIdToUsername;
+    }
+
+    public Map<String, String> getUsernameToClientId() {
+        return usernameToClientId;
     }
 }

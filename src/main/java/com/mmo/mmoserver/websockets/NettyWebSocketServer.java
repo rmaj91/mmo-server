@@ -22,11 +22,13 @@ public class NettyWebSocketServer {
 
     @Autowired
     private SessionRepository sessionRepository;
-    @Autowired
-    private GameEngine gameEngine;
 
-    private Map<String, String> clientIdToUsername = new HashMap<>();
+
     private final SocketIOServer server;
+
+    public SocketIOServer getServer() {
+        return server;
+    }
 
     public NettyWebSocketServer() {
         // Set up configuration
@@ -62,13 +64,15 @@ public class NettyWebSocketServer {
             String session = cookies.substring(sessionStartIndex, sessionStartIndex + uuidLengthWithHyphens);
             //todo later use this io cookie + bearer header to auth
             String username = this.sessionRepository.getUsername(session);
-            this.clientIdToUsername.put(client.getSessionId().toString(), username);
+            sessionRepository.getClientIdToUsername().put(client.getSessionId().toString(), username);
+            sessionRepository.getUsernameToClientId().put(username, client.getSessionId().toString());
             log.info("\"{}\" connected. session: {}", username, session);
         });
 
         server.addDisconnectListener(client -> {
             System.out.println("Client disconnected: " + client.getSessionId());
-            clientIdToUsername.remove(client.getSessionId().toString());
+            String removed = sessionRepository.getClientIdToUsername().remove(client.getSessionId().toString());
+            sessionRepository.getUsernameToClientId().remove(removed);
         });
 
         server.addEventListener("client-message", String.class, (client, data, ackSender) -> {
@@ -77,20 +81,20 @@ public class NettyWebSocketServer {
 //            ackSender.sendAckData("Message received!");
         });
 
-        server.addEventListener("state", StateUpdateRequest.class, (client, data, ackSender) -> {
-            System.out.println("Received state smg from client: " + data);
-
-            String username = clientIdToUsername.get(client.getSessionId().toString());
-            gameEngine.setPlayerState(username, data.getState());
-            log.info("SOCKET.IO: Updating player state to: {}", data.getState());
-        });
-
-        server.addEventListener("direction", RotationUpdateRequest.class, (client, data, ackSender) -> {
-            System.out.println("Received direction from client: " + data);
-
-            String username = clientIdToUsername.get(client.getSessionId().toString());
-            gameEngine.setPlayerDirection(username, data.getRotationY());
-            log.info("SOCKET.IO: Updating player direction to: {}", data.getRotationY());
-        });
+//        server.addEventListener("state", StateUpdateRequest.class, (client, data, ackSender) -> {
+//            System.out.println("Received state smg from client: " + data);
+//
+//            String username = clientIdToUsername.get(client.getSessionId().toString());
+//            gameEngine.setPlayerState(username, data.getState());
+//            log.info("SOCKET.IO: Updating player state to: {}", data.getState());
+//        });
+//
+//        server.addEventListener("direction", RotationUpdateRequest.class, (client, data, ackSender) -> {
+//            System.out.println("Received direction from client: " + data);
+//
+//            String username = clientIdToUsername.get(client.getSessionId().toString());
+//            gameEngine.setPlayerDirection(username, data.getRotationY());
+//            log.info("SOCKET.IO: Updating player direction to: {}", data.getRotationY());
+//        });
     }
 }
