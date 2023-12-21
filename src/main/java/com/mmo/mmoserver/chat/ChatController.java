@@ -1,6 +1,7 @@
 package com.mmo.mmoserver.chat;
 
 import com.mmo.mmoserver.auth.SessionRepository;
+import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -20,23 +21,37 @@ import static com.mmo.mmoserver.auth.AuthController.SESSION_COOKIE_NAME;
 @RequestMapping("/api/chat")
 public class ChatController {
 
-    private int maxChatSize = 15;
+    private int maxChatSize = 10;
     private List<String> chatMsgs = new ArrayList<>(15);
+
+//    @Autowired
+//    NettyWebSocketServer nettyWebSocketServer;
+
+    public ChatController(NettyWebSocketServer nettyWebSocketServer) {
+        nettyWebSocketServer.getServer().addEventListener("chat", ChatMessage.class, (client, data, ackSender) -> {
+            String username = sessionRepository.clientIdToUsername.get(client.getSessionId().toString());
+            String msg = username + ": " + data.getMsg();
+            chatMsgs.add(msg);
+            if (chatMsgs.size() > maxChatSize) {
+                chatMsgs.remove(0);
+            }
+        });
+    }
 
     @Autowired
     private SessionRepository sessionRepository;
 
-    @PostMapping("/msgs")
-    public void sendMsg(@RequestBody ChatMessage chatMessage, HttpServletRequest request) {
-        String session = getSessionFromRequestCookie(request);
-        String username = sessionRepository.getUsername(session);
-        String msg = username + ": " + chatMessage.getMsg();
-        chatMsgs.add(msg);
-        log.info("added msg: {}", msg);
-        if (chatMsgs.size() > maxChatSize) {
-            chatMsgs.remove(0);
-        }
-    }
+//    @PostMapping("/msgs")
+//    public void sendMsg(@RequestBody ChatMessage chatMessage, HttpServletRequest request) {
+//        String session = getSessionFromRequestCookie(request);
+//        String username = sessionRepository.getUsername(session);
+//        String msg = username + ": " + chatMessage.getMsg();
+//        chatMsgs.add(msg);
+//        log.info("added msg: {}", msg);
+//        if (chatMsgs.size() > maxChatSize) {
+//            chatMsgs.remove(0);
+//        }
+//    }
 
     @GetMapping("/msgs")
     public ResponseEntity<List<String>> getMsgs(HttpServletRequest request) {
