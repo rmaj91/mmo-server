@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMO RPG!</title>
+    <!-- Add your additional head elements, such as stylesheets or scripts, here -->
+</head>
+<body>
+
+<header>
+    <h1>Welcome to the MMO RPG!</h1>
+    <!-- Add additional header content or navigation links here -->
+</header>
+
+<main>
+    <!-- Your main content goes here -->
+    <p>This will be the coolest game ever!</p>
+    <p id="total-online"></p>
+    <img width="75%" height="75%" src="/background.png">
+    <div></div>
+    <a style="font-size: 40px;" href="http://localhost:5173" >Let's play</a>
+    <script>
+            var xhr = new XMLHttpRequest();
+
+            // Configure it to make a GET request to the specified URL
+            xhr.open('GET', 'http://localhost:8080/api/total-online', true);
+
+            // Define a function to handle the response
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    // Success! Handle the response data here
+                    document.getElementById('total-online').textContent = 'Total Online: ' + xhr.responseText
+                } else {
+                    // Error! Handle the error here
+                    console.error('HTTP request failed with status:', xhr.status);
+                }
+            };
+
+            // Send the request
+            xhr.send();
+
+    </script>
+</main>
+
+<footer>
+    <!-- Your footer content goes here -->
+    <p>&copy; 2023 Maiu Website</p>
+</footer>
+
+</body>
+</html>

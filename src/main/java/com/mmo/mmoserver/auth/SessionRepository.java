@@ -79,4 +79,8 @@ public class SessionRepository {
     public Map<String, String> getUsernameToClientId() {
         return usernameToClientId;
     }
+
+    public int getTotalOnline() {
+        return usernameToSession.size();
+    }
 }
