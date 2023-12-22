@@ -2,12 +2,12 @@ package com.mmo.mmoserver.engine;
 
 import com.corundumstudio.socketio.SocketIOClient;
 import com.mmo.mmoserver.auth.SessionRepository;
+import com.mmo.mmoserver.player.PlayerSocketController;
 import com.mmo.mmoserver.player.PlayerState;
 import com.mmo.mmoserver.player.RotationUpdateRequest;
 import com.mmo.mmoserver.player.StateUpdateRequest;
 import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -17,28 +17,27 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.mmo.mmoserver.commons.Events.STATE;
+
 @Slf4j
 @Component
 public class GameEngine {
 
-    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private Map<String, PlayerState> userToPosition = new HashMap<>();
     private Map<String, String> userToState = new HashMap<>();
     private Map<String, Double> userToDirection = new HashMap<>();
 
-//    @Autowired
-    NettyWebSocketServer nettyWebSocketServer;
-//    @Autowired
-    SessionRepository sessionRepository;
+    private final NettyWebSocketServer nettyWebSocketServer;
+    private final SessionRepository sessionRepository;
 
     public GameEngine(NettyWebSocketServer nettyWebSocketServer,
-                      SessionRepository sessionRepository
-    ) {
+                      SessionRepository sessionRepository) {
         this.nettyWebSocketServer = nettyWebSocketServer;
         this.sessionRepository = sessionRepository;
+
         start();
-        initListiners();
         scheduleCleanUpOldSessions();
     }
 
@@ -60,24 +59,6 @@ public class GameEngine {
                 log.error("cleanUpOldSessions.", e);
             }
         }, 0, 5, TimeUnit.SECONDS);
-    }
-
-    private void initListiners() {
-        nettyWebSocketServer.getServer().addEventListener("state", StateUpdateRequest.class, (client, data, ackSender) -> {
-            System.out.println("Received state smg from client: " + data);
-
-            String username = sessionRepository.clientIdToUsername.get(client.getSessionId().toString());
-            setPlayerState(username, data.getState());
-            log.info("SOCKET.IO: Updating player state to: {}", data.getState());
-        });
-
-        nettyWebSocketServer.getServer().addEventListener("direction", RotationUpdateRequest.class, (client, data, ackSender) -> {
-            System.out.println("Received direction from client: " + data);
-
-            String username = sessionRepository.clientIdToUsername.get(client.getSessionId().toString());
-            setPlayerDirection(username, data.getRotationY());
-            log.info("SOCKET.IO: Updating player direction to: {}", data.getRotationY());
-        });
     }
 
     public void clearUsername(String username) {
@@ -127,7 +108,7 @@ public class GameEngine {
     private void sendGameStateToPlayers() {
         userToPosition.forEach((username, position) -> {
             PlayerState status = userToPosition.getOrDefault(username, new PlayerState(10, 0, 10));//default position 10,10
-            PlayerState toReturn = new PlayerState(status.getPx(), status.getPy(), status.getPz()); //copy because keeping array of players
+            PlayerState toReturn = new PlayerState(status.getPx(), status.getPy(), status.getPz());
             userToPosition.forEach((u,p) -> {
                 if (!u.equals(username)) {
                     PlayerState toAdd = new PlayerState(p.getPx(), p.getPy(), p.getPz());
@@ -136,35 +117,18 @@ public class GameEngine {
                 }
             });
 
-
             String clientId = sessionRepository.getUsernameToClientId().get(username);
             SocketIOClient client = nettyWebSocketServer.getServer().getClient(UUID.fromString(clientId));
-            client.sendEvent("state", toReturn);
-            log.info("Send 'state' to the {}. data: {}", username, position);
+            client.sendEvent(STATE, toReturn);
+            log.debug("Sending 'state' to the {}. data: {}", username, position);
         });
-
-    }
-
-    public PlayerState getPlayerState(String username) {
-        PlayerState status = userToPosition.getOrDefault(username, new PlayerState(10, 0, 10));//default position 10,10
-        PlayerState toReturn = new PlayerState(status.getPx(), status.getPy(), status.getPz()); //copy because keeping array of players
-        userToPosition.forEach((k,v) -> {
-            if (!k.equals(username)) {
-                PlayerState toAdd = new PlayerState(v.getPx(), v.getPy(), v.getPz());
-                toAdd.setUsername(k);
-                toReturn.getAnotherPlayers().add(toAdd);
-            }
-        });
-        return toReturn;
     }
 
     public void setPlayerDirection(String username, double rotationY) {
         userToDirection.put(username, rotationY);
-//        log.info("Updating rotationY for player \"{}\", to:\"{}\".", username, rotationY);
     }
 
     public void setPlayerState(String username, String state) {
         userToState.put(username, state);
-//        log.info("Updating state for player \"{}\", to: \"{}\".", username, state);
     }
 }

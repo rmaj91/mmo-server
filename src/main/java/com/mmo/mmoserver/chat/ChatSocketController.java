@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
-import static com.mmo.mmoserver.websockets.Events.CHAT;
-import static com.mmo.mmoserver.websockets.Events.INIT_CHAT;
+import static com.mmo.mmoserver.commons.Events.CHAT;
+import static com.mmo.mmoserver.commons.Events.INIT_CHAT;
 
 @Slf4j
 @Service

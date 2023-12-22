@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 public class PlayerState {
+
     private String username;
     private double px; // p for position
     private double py;
