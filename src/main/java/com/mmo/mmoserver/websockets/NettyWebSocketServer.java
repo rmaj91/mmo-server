@@ -2,19 +2,12 @@ package com.mmo.mmoserver.websockets;
 
 import com.corundumstudio.socketio.ClientOperations;
 import com.corundumstudio.socketio.Configuration;
-import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.mmo.mmoserver.auth.SessionRepository;
-import com.mmo.mmoserver.engine.GameEngine;
-import com.mmo.mmoserver.player.RotationUpdateRequest;
-import com.mmo.mmoserver.player.StateUpdateRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -80,21 +73,9 @@ public class NettyWebSocketServer {
             // Send an acknowledgment if needed
 //            ackSender.sendAckData("Message received!");
         });
+    }
 
-//        server.addEventListener("state", StateUpdateRequest.class, (client, data, ackSender) -> {
-//            System.out.println("Received state smg from client: " + data);
-//
-//            String username = clientIdToUsername.get(client.getSessionId().toString());
-//            gameEngine.setPlayerState(username, data.getState());
-//            log.info("SOCKET.IO: Updating player state to: {}", data.getState());
-//        });
-//
-//        server.addEventListener("direction", RotationUpdateRequest.class, (client, data, ackSender) -> {
-//            System.out.println("Received direction from client: " + data);
-//
-//            String username = clientIdToUsername.get(client.getSessionId().toString());
-//            gameEngine.setPlayerDirection(username, data.getRotationY());
-//            log.info("SOCKET.IO: Updating player direction to: {}", data.getRotationY());
-//        });
+    public void broadcastEvent(String event, Object data) {
+        server.getBroadcastOperations().sendEvent(event, data);
     }
 }
