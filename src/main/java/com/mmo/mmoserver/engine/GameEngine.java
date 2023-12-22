@@ -73,30 +73,34 @@ public class GameEngine {
             public void run() {
                 while (true) {
 
-                    userToState.forEach((k,v)-> {
-                        if (v.equals("walk")) {
-                            PlayerState position = userToPosition.getOrDefault(k, new PlayerState(10, 0, 10));
-                            Double direction = userToDirection.getOrDefault(k, 0d);
-
-                            //apply magic logic
-                            // Move 1 unit in the direction of rotation
-                            double deltaX = 0.3 * Math.cos(direction);
-                            double deltaZ = 0.3 * Math.sin(direction);
-                            // Calculate the new position
-                            double newX = position.getPx() + deltaX;
-                            double newZ = position.getPz() - deltaZ;
-
-                            PlayerState newState = new PlayerState(newX, position.getPy(), newZ);
-                            log.info("new state: {}, {}, {}", newX, position.getPy(), newZ);
-                            userToPosition.put(k, newState);
-                        }
-                    });
-                    sendGameStateToPlayers();
-
                     try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        userToState.forEach((k,v)-> {
+                            if (v.equals("walk")) {
+                                PlayerState position = userToPosition.getOrDefault(k, new PlayerState(10, 0, 10));
+                                Double direction = userToDirection.getOrDefault(k, 0d);
+
+                                //apply magic logic
+                                // Move 1 unit in the direction of rotation
+                                double deltaX = 0.3 * Math.cos(direction);
+                                double deltaZ = 0.3 * Math.sin(direction);
+                                // Calculate the new position
+                                double newX = position.getPx() + deltaX;
+                                double newZ = position.getPz() - deltaZ;
+
+                                PlayerState newState = new PlayerState(newX, position.getPy(), newZ);
+                                log.info("new state: {}, {}, {}", newX, position.getPy(), newZ);
+                                userToPosition.put(k, newState);
+                            }
+                        });
+                        sendGameStateToPlayers();
+
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (Exception e) {
+                        log.info("Exception in game loop.", e);
                     }
                 }
             }
