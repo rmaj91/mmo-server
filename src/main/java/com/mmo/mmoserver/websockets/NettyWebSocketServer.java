@@ -3,7 +3,7 @@ package com.mmo.mmoserver.websockets;
 import com.corundumstudio.socketio.ClientOperations;
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOServer;
-import com.mmo.mmoserver.auth.SessionRepository;
+import com.mmo.mmoserver.auth.SessionService;
 import io.netty.handler.codec.http.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class NettyWebSocketServer {
 
     @Autowired
-    private SessionRepository sessionRepository;
+    private SessionService sessionService;
 
 
     private final SocketIOServer server;
@@ -56,16 +56,16 @@ public class NettyWebSocketServer {
             int uuidLengthWithHyphens = 36;
             String session = cookies.substring(sessionStartIndex, sessionStartIndex + uuidLengthWithHyphens);
             //todo later use this io cookie + bearer header to auth
-            String username = this.sessionRepository.getUsername(session);
-            sessionRepository.getClientIdToUsername().put(client.getSessionId().toString(), username);
-            sessionRepository.getUsernameToClientId().put(username, client.getSessionId().toString());
+            String username = this.sessionService.getUsername(session);
+            sessionService.putClientIdToUsername(client.getSessionId().toString(), username);
+            sessionService.putUsernameToClientId(username, client.getSessionId().toString());
             log.info("\"{}\" connected. session: {}", username, session);
         });
 
         server.addDisconnectListener(client -> {
             System.out.println("Client disconnected: " + client.getSessionId());
-            String removed = sessionRepository.getClientIdToUsername().remove(client.getSessionId().toString());
-            sessionRepository.getUsernameToClientId().remove(removed);
+            String removedUsername = sessionService.removeClientIdToUsername(client.getSessionId().toString());
+            sessionService.removeUsernameToClientId(removedUsername);
         });
 
         server.addEventListener("client-message", String.class, (client, data, ackSender) -> {

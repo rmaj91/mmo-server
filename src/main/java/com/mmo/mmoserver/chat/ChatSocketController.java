@@ -1,6 +1,6 @@
 package com.mmo.mmoserver.chat;
 
-import com.mmo.mmoserver.auth.SessionRepository;
+import com.mmo.mmoserver.auth.SessionService;
 import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,24 +14,24 @@ import static com.mmo.mmoserver.commons.Events.INIT_CHAT;
 @Service
 public class ChatSocketController {
 
-    private final SessionRepository sessionRepository;
+    private final SessionService sessionService;
     private final NettyWebSocketServer nettyWebSocketServer;
     private final ChatService chatService;
 
 
     @Autowired
-    public ChatSocketController(NettyWebSocketServer nettyWebSocketServer, SessionRepository sessionRepository, ChatService chatService) {
+    public ChatSocketController(NettyWebSocketServer nettyWebSocketServer, SessionService sessionService, ChatService chatService) {
         this.nettyWebSocketServer = nettyWebSocketServer;
-        this.sessionRepository = sessionRepository;
+        this.sessionService = sessionService;
         this.chatService = chatService;
 
-        registerChatEvent(nettyWebSocketServer, sessionRepository);
+        registerChatEvent(nettyWebSocketServer, sessionService);
         registerInitChat(nettyWebSocketServer);
     }
 
-    private void registerChatEvent(NettyWebSocketServer nettyWebSocketServer, SessionRepository sessionRepository) {
+    private void registerChatEvent(NettyWebSocketServer nettyWebSocketServer, SessionService sessionService) {
         nettyWebSocketServer.getServer().addEventListener(CHAT, ChatMessage.class, (client, data, ackSender) -> {
-            String username = sessionRepository.clientIdToUsername.get(client.getSessionId().toString());
+            String username = sessionService.getUsernameByClientId(client.getSessionId().toString());
             chatService.addMessage(username, data.getMsg());
 
             nettyWebSocketServer.broadcastEvent(CHAT, chatService.getAllMessages());

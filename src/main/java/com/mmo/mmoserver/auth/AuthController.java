@@ -1,5 +1,7 @@
 package com.mmo.mmoserver.auth;
 
+import com.mmo.mmoserver.engine.GameEngine;
+import com.mmo.mmoserver.player.PlayerState;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +25,10 @@ public class AuthController {
     public static final String SESSION_COOKIE_NAME = "session";
 
     @Autowired
-    private final SessionRepository sessionRepository;
+    private final SessionService sessionService;
+
+    @Autowired
+    private final GameEngine gameEngine;
 
     @PostMapping
     public ResponseEntity<?> authenticate(@RequestBody AuthRequest authRequest, HttpServletRequest request, HttpServletResponse response) {
@@ -32,10 +37,10 @@ public class AuthController {
             log.info("username cannot be empty");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-        if (sessionRepository.isAlreadyAuthenticated(username)) {
-            log.info("\"{}\" username already authenticated.", username);
+        if (sessionService.isAlreadyAuthenticated(username)) {
+            log.info("\"{}\" user already authenticated.", username);
             String sessionFromRequestCookie = getSessionFromRequestCookie(request);
-            String usernameFromCookie = sessionRepository.getUsername(sessionFromRequestCookie);
+            String usernameFromCookie = sessionService.getUsername(sessionFromRequestCookie);
             if (!username.equals(usernameFromCookie)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
@@ -43,7 +48,7 @@ public class AuthController {
         }
 
         String session = UUID.randomUUID().toString();
-        sessionRepository.setSession(username, session);
+        sessionService.setSession(username, session);
         Cookie sessionCookie = new Cookie(SESSION_COOKIE_NAME, session);
         sessionCookie.setMaxAge(24 * 60 * 60);
         sessionCookie.setPath("/");
@@ -56,12 +61,13 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         String session = getSessionFromRequestCookie(request);
 
-        String username = sessionRepository.getUsername(session);
+        String username = sessionService.getUsername(session);
         String character = loginRequest.getCharacter();
         // for now character must be the same as username.
         if (StringUtils.hasText(username) && username.equals(character)) {
             LoginResponse loginResponse = new LoginResponse();
             loginResponse.setCharacter(character);
+            gameEngine.setPlayerPosition(username, new PlayerState(Math.random() * 10, 0 , Math.random() * 10));
             log.info("\"{}\" logged in successfully!", character);
             return ResponseEntity.ok(loginResponse);
         } else {
@@ -73,10 +79,10 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         String session = getSessionFromRequestCookie(request);
-        if (sessionRepository.isSessionExist(session)) {
-            String username = sessionRepository.getUsername(session);
+        if (sessionService.isSessionExist(session)) {
+            String username = sessionService.getUsername(session);
             log.info("\"{}\" successfully logout.", username);
-            sessionRepository.removeSession(session);
+            sessionService.removeSession(session);
             Cookie cookie = new Cookie(SESSION_COOKIE_NAME, "");
             cookie.setMaxAge(0);
             cookie.setPath("/");
@@ -90,7 +96,7 @@ public class AuthController {
     @PostMapping("/ping")
     public void ping(HttpServletRequest request) {
         String session = getSessionFromRequestCookie(request);
-        sessionRepository.keepAlive(session);
+        sessionService.keepAlive(session);
     }
 
     private static String getSessionFromRequestCookie(HttpServletRequest request) {
