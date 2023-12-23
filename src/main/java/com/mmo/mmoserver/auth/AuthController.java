@@ -80,8 +80,11 @@ public class AuthController {
         String session = getSessionFromRequestCookie(request);
         if (sessionService.isSessionExist(session)) {
             String username = sessionService.getUsername(session);
-            log.info("\"{}\" successfully logout.", username);
             sessionService.removeSession(session);
+            gameEngine.clearUsername(username);
+            log.info("\"{}\" successfully logout.", username);
+//            sessionService.removeSession(session);
+//            sessionService.logout(session);
             Cookie cookie = new Cookie(SESSION_COOKIE_NAME, "");
             cookie.setMaxAge(0);
             cookie.setPath("/");

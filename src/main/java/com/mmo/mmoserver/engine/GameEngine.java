@@ -39,18 +39,20 @@ public class GameEngine {
     private void scheduleCleanUpOldSessions() {
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                List<String> loggedInSessions = sessionService.getAllLoggedInSessions();
-                Set<String> allActiveSessions = sessionService.getAllActiveSessions();
-                for (String loggedInSession : loggedInSessions) {
-                    if (!allActiveSessions.contains(loggedInSession)) {
-                        String username = sessionService.getUsername(loggedInSession);
-                        sessionService.removeSession(loggedInSession);
-                        clearUsername(username);
+                synchronized (sessionService) {
+                    List<String> loggedInSessions = sessionService.getAllLoggedInSessions();
+                    Set<String> allActiveSessions = sessionService.getAllActiveSessions();
+                    for (String loggedInSession : loggedInSessions) {
+                        if (!allActiveSessions.contains(loggedInSession)) {
+                            String username = sessionService.getUsername(loggedInSession);
+                            sessionService.removeSession(loggedInSession);
+                            clearUsername(username);
 
-                        log.info("cleanUpOldSessions \"{}\" has been logout! because of inactivity.", username);
+                            log.info("cleanUpOldSessions \"{}\" has been logout! because of inactivity.", username);
+                        }
                     }
+                    sessionService.clearActiveSessions();
                 }
-                sessionService.clearActiveSessions();
                 log.info("cleanUpOldSessions - finished");
             } catch (Exception e) {
                 log.error("cleanUpOldSessions.", e);
@@ -101,9 +103,13 @@ public class GameEngine {
             });
 
             String clientId = sessionService.getClientId(username);
-            SocketIOClient client = nettyWebSocketServer.getServer().getClient(UUID.fromString(clientId));
-            client.sendEvent(STATE, toReturn);
-            log.info("Sending 'state' to the {}. data: {}", username, position);
+            if (clientId != null) {
+                SocketIOClient client = nettyWebSocketServer.getServer().getClient(UUID.fromString(clientId));
+                client.sendEvent(STATE, toReturn);
+//                log.info("Sending 'state' to the {}. data: {}", username, position);
+            } else {
+                log.info("ClientId not found for: {}", username);
+            }
         });
     }
 
@@ -135,6 +141,7 @@ public class GameEngine {
             for (String toAdd : usersToAddIdle) {
                 userToState.put(toAdd, "idle");
             }
+
             sendGameStateToPlayers();//todo: fix, because sending affects game loop time
 
             try {
@@ -143,8 +150,7 @@ public class GameEngine {
                 e.printStackTrace();
             }
         } catch (Exception e) {
-            log.info("Exception in game loop.", e);
-            e.printStackTrace();
+            log.info("Exception in game loop. {}, {}", e.getCause(), e.getMessage(), e);
         }
     }
 }
