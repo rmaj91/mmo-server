@@ -6,8 +6,7 @@ import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import static com.mmo.mmoserver.commons.Events.DIRECTION;
-import static com.mmo.mmoserver.commons.Events.STATE;
+import static com.mmo.mmoserver.commons.Events.*;
 
 @Slf4j
 @Component
@@ -30,7 +29,18 @@ public class PlayerSocketController {
         nettyWebSocketServer.getServer().addEventListener(STATE, StateUpdateRequest.class, (client, data, ackSender) -> {
             String username = sessionService.getUsernameByClientId(client.getSessionId().toString());
             gameEngine.setPlayerState(username, data.getState().toString());
-            log.debug("SOCKET.IO: Updating player state to: {}", data.getState());
+            log.info("SOCKET.IO: Updating player state to: {}", data.getState());
+        });
+
+        nettyWebSocketServer.getServer().addEventListener(INIT_STATE, StateUpdateRequest.class, (client, data, ackSender) -> {
+            String username = sessionService.getUsernameByClientId(client.getSessionId().toString());
+            PlayerState playerPosition = gameEngine.getPlayerPosition(username);
+            if (playerPosition == null) {
+                playerPosition = new PlayerState(Math.random() * 10, 0, Math.random() * 10);
+                gameEngine.setPlayerPosition(username, playerPosition);
+            }
+            client.sendEvent(STATE, playerPosition);
+            log.info("SOCKET.IO: Updating player state to: {}", data.getState());
         });
     }
 
@@ -38,7 +48,7 @@ public class PlayerSocketController {
         nettyWebSocketServer.getServer().addEventListener(DIRECTION, RotationUpdateRequest.class, (client, data, ackSender) -> {
             String username = sessionService.getUsernameByClientId(client.getSessionId().toString());
             gameEngine.setPlayerDirection(username, data.getRotationY());
-            log.debug("SOCKET.IO: Updating player direction to: {}", data.getRotationY());
+            log.info("SOCKET.IO: Updating player direction to: {}", data.getRotationY());
         });
     }
 }

@@ -67,7 +67,6 @@ public class AuthController {
         if (StringUtils.hasText(username) && username.equals(character)) {
             LoginResponse loginResponse = new LoginResponse();
             loginResponse.setCharacter(character);
-            gameEngine.setPlayerPosition(username, new PlayerState(Math.random() * 10, 0 , Math.random() * 10));
             log.info("\"{}\" logged in successfully!", character);
             return ResponseEntity.ok(loginResponse);
         } else {

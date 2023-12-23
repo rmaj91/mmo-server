@@ -72,8 +72,12 @@ public class GameEngine {
         userToState.put(username, state);
     }
 
-    public synchronized void setPlayerPosition(String username, PlayerState position) {
-        userToPosition.put(username, position);
+    public synchronized PlayerState getPlayerPosition(String username) {
+        return userToPosition.get(username);
+    }
+
+    public synchronized PlayerState setPlayerPosition(String username, PlayerState position) {
+        return userToPosition.put(username, position);
     }
 
     private void start() {
@@ -87,8 +91,7 @@ public class GameEngine {
 
     private void sendGameStateToPlayers() {
         userToPosition.forEach((username, position) -> {
-            PlayerState status = userToPosition.get(username);
-            PlayerState toReturn = new PlayerState(status.getPx(), status.getPy(), status.getPz());
+            PlayerState toReturn = new PlayerState(position.getPx(), position.getPy(), position.getPz());
             userToPosition.forEach((u,p) -> {
                 if (!u.equals(username)) {
                     PlayerState toAdd = new PlayerState(p.getPx(), p.getPy(), p.getPz());
@@ -100,15 +103,16 @@ public class GameEngine {
             String clientId = sessionService.getClientId(username);
             SocketIOClient client = nettyWebSocketServer.getServer().getClient(UUID.fromString(clientId));
             client.sendEvent(STATE, toReturn);
-            log.debug("Sending 'state' to the {}. data: {}", username, position);
+            log.info("Sending 'state' to the {}. data: {}", username, position);
         });
     }
 
-    private synchronized void gameLoopIteration() {
+    private void gameLoopIteration() {
         try {
+            List<String> usersToAddIdle = new ArrayList<>();
             userToState.forEach((k,v)-> {
                 if (v.equals("walk")) {
-                    PlayerState position = userToPosition.get(k);
+                    PlayerState position = userToPosition.getOrDefault(k, new PlayerState(Math.random() * 10, 0 , Math.random() * 10));
                     Double direction = userToDirection.getOrDefault(k, 0d);
 
                     //apply magic logic
@@ -123,7 +127,14 @@ public class GameEngine {
                     log.info("new state: {}, {}, {}", newX, position.getPy(), newZ);
                     userToPosition.put(k, newState);
                 }
+                else {
+                    userToPosition.putIfAbsent(k, new PlayerState(Math.random() * 10, 0 , Math.random() * 10));
+                    usersToAddIdle.add(k);
+                }
             });
+            for (String toAdd : usersToAddIdle) {
+                userToState.put(toAdd, "idle");
+            }
             sendGameStateToPlayers();//todo: fix, because sending affects game loop time
 
             try {
@@ -133,6 +144,7 @@ public class GameEngine {
             }
         } catch (Exception e) {
             log.info("Exception in game loop.", e);
+            e.printStackTrace();
         }
     }
 }
