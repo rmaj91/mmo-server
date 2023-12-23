@@ -6,12 +6,19 @@ import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import static com.mmo.mmoserver.commons.Events.*;
 
 @Slf4j
 @Component
 public class PlayerSocketController {
 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final NettyWebSocketServer nettyWebSocketServer;
     private final SessionService sessionService;
     private final GameEngine gameEngine;
@@ -23,6 +30,7 @@ public class PlayerSocketController {
 
         initStateListener();
         initDirectionListener();
+        scheduleCleanUpOldSessions();
     }
 
     private void initStateListener() {
@@ -50,5 +58,27 @@ public class PlayerSocketController {
             gameEngine.setPlayerDirection(username, data.getRotationY());
             log.info("SOCKET.IO: Updating player direction to: {}", data.getRotationY());
         });
+    }
+
+    private void scheduleCleanUpOldSessions() {
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                List<String> loggedInSessions = sessionService.getAllLoggedInSessions();
+                Set<String> allActiveSessions = sessionService.getAllActiveSessions();
+                for (String loggedInSession : loggedInSessions) {
+                    if (!allActiveSessions.contains(loggedInSession)) {
+                        String username = sessionService.getUsername(loggedInSession);
+                        sessionService.removeSession(loggedInSession);
+                        gameEngine.clearUsername(username);
+
+                        log.info("cleanUpOldSessions \"{}\" has been logout! because of inactivity.", username);
+                    }
+                }
+                sessionService.clearActiveSessions();
+                log.info("cleanUpOldSessions - finished");
+            } catch (Exception e) {
+                log.error("cleanUpOldSessions.", e);
+            }
+        }, 0, 5, TimeUnit.SECONDS);
     }
 }

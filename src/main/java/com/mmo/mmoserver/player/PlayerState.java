@@ -17,6 +17,8 @@ public class PlayerState {
     private double py;
     private double pz;
 
+    private Double rotationY;
+
     private List<PlayerState> anotherPlayers = new ArrayList<>();
 
     public PlayerState(double px, double py, double pz) {

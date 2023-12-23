@@ -18,8 +18,6 @@ import static com.mmo.mmoserver.commons.Events.STATE;
 @Component
 public class GameEngine {
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
     private final Map<String, PlayerState> userToPosition = new HashMap<>();
     private final Map<String, String> userToState = new HashMap<>();
     private final Map<String, Double> userToDirection = new HashMap<>();
@@ -33,31 +31,6 @@ public class GameEngine {
         this.sessionService = sessionService;
 
         start();
-        scheduleCleanUpOldSessions();
-    }
-
-    private void scheduleCleanUpOldSessions() {
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                synchronized (sessionService) {
-                    List<String> loggedInSessions = sessionService.getAllLoggedInSessions();
-                    Set<String> allActiveSessions = sessionService.getAllActiveSessions();
-                    for (String loggedInSession : loggedInSessions) {
-                        if (!allActiveSessions.contains(loggedInSession)) {
-                            String username = sessionService.getUsername(loggedInSession);
-                            sessionService.removeSession(loggedInSession);
-                            clearUsername(username);
-
-                            log.info("cleanUpOldSessions \"{}\" has been logout! because of inactivity.", username);
-                        }
-                    }
-                    sessionService.clearActiveSessions();
-                }
-                log.info("cleanUpOldSessions - finished");
-            } catch (Exception e) {
-                log.error("cleanUpOldSessions.", e);
-            }
-        }, 0, 5, TimeUnit.SECONDS);
     }
 
     public synchronized void clearUsername(String username) {
@@ -98,6 +71,7 @@ public class GameEngine {
                 if (!u.equals(username)) {
                     PlayerState toAdd = new PlayerState(p.getPx(), p.getPy(), p.getPz());
                     toAdd.setUsername(u);
+                    toAdd.setRotationY(userToDirection.get(u));
                     toReturn.getAnotherPlayers().add(toAdd);
                 }
             });
