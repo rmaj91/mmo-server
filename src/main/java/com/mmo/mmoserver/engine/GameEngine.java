@@ -32,7 +32,12 @@ public class GameEngine {
         this.nettyWebSocketServer = nettyWebSocketServer;
         this.sessionService = sessionService;
 
-        addMob(Mob.create("mob_1", 4));
+        addMob(Mob.create("mob_1", 7));
+        addMob(Mob.create("mob_2", 7));
+        addMob(Mob.create("mob_3", 7));
+        addMob(Mob.create("mob_4", 7));
+        addMob(Mob.create("mob_5", 7));
+        addMob(Mob.create("mob_6", 7));
         start();
     }
 
@@ -79,6 +84,7 @@ public class GameEngine {
             playerState.setPx(monster.getPx());
             playerState.setPy(monster.getPy());
             playerState.setPz(monster.getPz());
+            playerState.setCombat(monster.isCombat());
             monsters.add(playerState);
         }
 
@@ -151,8 +157,14 @@ public class GameEngine {
                 for (Map.Entry<String, PlayerState> entry : userToPosition.entrySet()) {
                     PlayerState player = entry.getValue();
                     double mobPlayerDistance = Math.sqrt(Math.pow(monster.getPx() - player.getPx(), 2) + Math.pow(monster.getPz() - player.getPz(), 2));
-                    if (mobPlayerDistance < monster.getAggroRange()) {
+                    if (mobPlayerDistance < monster.getAggroRange() && mobPlayerDistance > 1) {
                         log.info("Monster {} is comming to {}", monster.getName(), player.getUsername());
+                        moveMonsterInPlayersDirection(monster, player);
+                    }
+                    if (mobPlayerDistance < monster.getAggroRange() ) {
+                        monster.setCombat(true);
+                    } else {
+                        monster.setCombat(false);
                     }
                 }
             }
@@ -167,5 +179,34 @@ public class GameEngine {
         } catch (Exception e) {
             log.info("Exception in game loop. {}, {}", e.getCause(), e.getMessage(), e);
         }
+    }
+
+    private void moveMonsterInPlayersDirection(Mob monster, PlayerState player) {
+        // Example points
+        var x1 = monster.getPx();
+        var z1 = monster.getPz();
+        var x2 = player.getPx();
+        var z2 = player.getPz();
+
+        // Calculate vector from point 1 to point 2
+        var dx = x2 - x1;
+        var dz = z2 - z1;
+
+        // Calculate magnitude of the vector
+        var magnitude = Math.sqrt(dx * dx + dz * dz);
+
+        // Normalize the vector
+        var normalizedDx = dx / magnitude;
+        var normalizedDz = dz / magnitude;
+
+        // Define the distance to move (1 unit in this case)
+        var distanceToMove = 0.1;
+
+        // Calculate the new coordinates for point 1
+        var newX1 = x1 + normalizedDx * distanceToMove;
+        var newZ1 = z1 + normalizedDz * distanceToMove;
+
+        monster.setPx(newX1);
+        monster.setPz(newZ1);
     }
 }

@@ -21,6 +21,8 @@ public class PlayerState {
 
     private List<PlayerState> anotherPlayers = new ArrayList<>();
     private List<PlayerState> monsters = new ArrayList<>();
+    private boolean combat;
+    private boolean dead;
 
     public PlayerState(double px, double py, double pz) {
         this.px = px;

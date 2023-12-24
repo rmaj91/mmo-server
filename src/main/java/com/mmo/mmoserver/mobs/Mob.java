@@ -17,8 +17,10 @@ public class Mob {
     private double py;
     private double pz;
     private double aggroRange;
+    private boolean combat;
+    private boolean dead;
 
     public static Mob create(String name, double aggroRange) {
-        return new Mob(name, Math.random() * MAP_X, 0, Math.random() * MAP_Z, aggroRange);
+        return new Mob(name, Math.random() * MAP_X, 0, Math.random() * MAP_Z, aggroRange, false, false);
     }
 }
