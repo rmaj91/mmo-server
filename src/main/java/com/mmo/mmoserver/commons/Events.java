@@ -7,4 +7,6 @@ public interface Events {
     String STATE = "state";
     String INIT_STATE = "init-state";
     String DIRECTION = "direction";
+    String MELEE = "melee";
+    String RANGED = "ranged";
 }

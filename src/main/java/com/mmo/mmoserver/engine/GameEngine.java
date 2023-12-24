@@ -22,6 +22,9 @@ public class GameEngine {
     private final Map<String, String> userToState = new HashMap<>();
     private final Map<String, Double> userToDirection = new HashMap<>();
 
+    private final Map<String, String> inCommingMeleeAttacks = new HashMap<>(); //username to mob
+    private final Map<String, String> inCommingRangedAttacks = new HashMap<>();
+
     private final NettyWebSocketServer nettyWebSocketServer;
     private final SessionService sessionService;
 
@@ -153,6 +156,7 @@ public class GameEngine {
             }
 
             //mobs behaviour
+            List<Mob> killed = new ArrayList<>();
             for (Mob monster : monsters) {
                 for (Map.Entry<String, PlayerState> entry : userToPosition.entrySet()) {
                     PlayerState player = entry.getValue();
@@ -166,9 +170,27 @@ public class GameEngine {
                     } else {
                         monster.setCombat(false);
                     }
+
+                    //handling melee attacks
+                    if (inCommingMeleeAttacks.containsKey(entry.getKey()) && inCommingMeleeAttacks.get(entry.getKey()).equals(monster.getName())) {
+                        if (mobPlayerDistance < 3) {
+                            //attack
+                            killed.add(monster);
+                        }
+                        inCommingMeleeAttacks.remove(entry.getKey());
+                    }
+
+                    //handling ranged attacks
+                    if (inCommingRangedAttacks.containsKey(entry.getKey()) && inCommingRangedAttacks.get(entry.getKey()).equals(monster.getName())) {
+                        if (mobPlayerDistance > 4 && mobPlayerDistance < 11) {
+                            //attack
+                            killed.add(monster);
+                        }
+                        inCommingRangedAttacks.remove(entry.getKey());
+                    }
                 }
             }
-
+            monsters.removeAll(killed);
             sendGameStateToPlayers();//todo: fix, because sending affects game loop time
 
             try {
@@ -208,5 +230,13 @@ public class GameEngine {
 
         monster.setPx(newX1);
         monster.setPz(newZ1);
+    }
+
+    public synchronized void setMobMeleeAttack(String username, String mob) {
+        inCommingMeleeAttacks.put(username, mob);
+    }
+
+    public synchronized void setMobRangedAttack(String username, String mob) {
+        inCommingRangedAttacks.put(username, mob);
     }
 }

@@ -2,6 +2,7 @@ package com.mmo.mmoserver.player;
 
 import com.mmo.mmoserver.auth.SessionService;
 import com.mmo.mmoserver.engine.GameEngine;
+import com.mmo.mmoserver.mobs.MobAttack;
 import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,7 +33,23 @@ public class PlayerSocketController {
 
         initStateListener();
         initDirectionListener();
+        initAttackListener();
+
         scheduleCleanUpOldSessions();
+    }
+
+    private void initAttackListener() {
+        nettyWebSocketServer.getServer().addEventListener(MELEE, MobAttack.class, (client, data, ackSender) -> {
+            String username = sessionService.getUsernameByClientId(client.getSessionId().toString());
+            gameEngine.setMobMeleeAttack(username, data.getMob());
+            log.info("Player {} tries melee attack mob {}", username,data.getMob());
+        });
+
+        nettyWebSocketServer.getServer().addEventListener(RANGED, MobAttack.class, (client, data, ackSender) -> {
+            String username = sessionService.getUsernameByClientId(client.getSessionId().toString());
+            gameEngine.setMobRangedAttack(username, data.getMob());
+            log.info("Player {} tries ranged attack mob {}", username,data.getMob());
+        });
     }
 
     private void initStateListener() {
