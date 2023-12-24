@@ -191,6 +191,9 @@ public class GameEngine {
                 }
             }
             monsters.removeAll(killed);
+            for (Mob mob : killed) {
+                monsters.add(Mob.create(mob.getName(), 7));
+            }
             sendGameStateToPlayers();//todo: fix, because sending affects game loop time
 
             try {
