@@ -1,7 +1,6 @@
 package com.mmo.mmoserver.auth;
 
 import com.mmo.mmoserver.engine.GameEngine;
-import com.mmo.mmoserver.player.PlayerState;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +14,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.UUID;
+
+import static com.mmo.mmoserver.GameConfig.MAP_X;
+import static com.mmo.mmoserver.GameConfig.MAP_Z;
 
 @Slf4j
 @RestController
@@ -67,6 +69,8 @@ public class AuthController {
         if (StringUtils.hasText(username) && username.equals(character)) {
             LoginResponse loginResponse = new LoginResponse();
             loginResponse.setCharacter(character);
+            loginResponse.setMapX(MAP_X);
+            loginResponse.setMapZ(MAP_Z);
             log.info("\"{}\" logged in successfully!", character);
             return ResponseEntity.ok(loginResponse);
         } else {

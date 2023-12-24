@@ -7,4 +7,6 @@ import lombok.Setter;
 @Setter
 public class LoginResponse {
     private String character;
+    private int mapX;
+    private int mapZ;
 }
