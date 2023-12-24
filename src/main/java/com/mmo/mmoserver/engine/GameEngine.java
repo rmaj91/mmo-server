@@ -103,9 +103,15 @@ public class GameEngine {
                     if (newX > MAP_X) {
                         newX = MAP_X;
                     }
+                    if (newX < 0 ) {
+                        newX = 0;
+                    }
                     double newZ = position.getPz() - deltaZ;
                     if (newZ > MAP_Z) {
                         newZ = MAP_Z;
+                    }
+                    if (newZ < 0 ) {
+                        newZ = 0;
                     }
 
                     PlayerState newState = new PlayerState(newX, position.getPy(), newZ);
