@@ -8,10 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
+import static com.mmo.mmoserver.GameConfig.MAP_X;
+import static com.mmo.mmoserver.GameConfig.MAP_Z;
 import static com.mmo.mmoserver.commons.Events.STATE;
 
 @Slf4j
@@ -92,7 +91,7 @@ public class GameEngine {
             List<String> usersToAddIdle = new ArrayList<>();
             userToState.forEach((k,v)-> {
                 if (v.equals("walk")) {
-                    PlayerState position = userToPosition.getOrDefault(k, new PlayerState(Math.random() * 10, 0 , Math.random() * 10));
+                    PlayerState position = userToPosition.getOrDefault(k, new PlayerState(Math.random() * MAP_X, 0 , Math.random() * MAP_Z));
                     Double direction = userToDirection.getOrDefault(k, 0d);
 
                     //apply magic logic
@@ -101,14 +100,20 @@ public class GameEngine {
                     double deltaZ = 0.3 * Math.sin(direction);
                     // Calculate the new position
                     double newX = position.getPx() + deltaX;
+                    if (newX > MAP_X) {
+                        newX = MAP_X;
+                    }
                     double newZ = position.getPz() - deltaZ;
+                    if (newZ > MAP_Z) {
+                        newZ = MAP_Z;
+                    }
 
                     PlayerState newState = new PlayerState(newX, position.getPy(), newZ);
                     log.info("new state: {}, {}, {}", newX, position.getPy(), newZ);
                     userToPosition.put(k, newState);
                 }
                 else {
-                    userToPosition.putIfAbsent(k, new PlayerState(Math.random() * 10, 0 , Math.random() * 10));
+                    userToPosition.putIfAbsent(k, new PlayerState(Math.random() * MAP_X, 0 , Math.random() * MAP_Z));
                     usersToAddIdle.add(k);
                 }
             });

@@ -12,6 +12,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.mmo.mmoserver.GameConfig.MAP_X;
+import static com.mmo.mmoserver.GameConfig.MAP_Z;
 import static com.mmo.mmoserver.commons.Events.*;
 
 @Slf4j
@@ -44,7 +46,7 @@ public class PlayerSocketController {
             String username = sessionService.getUsernameByClientId(client.getSessionId().toString());
             PlayerState playerPosition = gameEngine.getPlayerPosition(username);
             if (playerPosition == null) {
-                playerPosition = new PlayerState(Math.random() * 10, 0, Math.random() * 10);
+                playerPosition = new PlayerState(Math.random() * MAP_X, 0, Math.random() * MAP_Z);
                 gameEngine.setPlayerPosition(username, playerPosition);
             }
             client.sendEvent(STATE, playerPosition);
