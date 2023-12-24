@@ -20,6 +20,7 @@ public class PlayerState {
     private Double rotationY;
 
     private List<PlayerState> anotherPlayers = new ArrayList<>();
+    private List<PlayerState> monsters = new ArrayList<>();
 
     public PlayerState(double px, double py, double pz) {
         this.px = px;

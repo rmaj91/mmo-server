@@ -2,6 +2,7 @@ package com.mmo.mmoserver.engine;
 
 import com.corundumstudio.socketio.SocketIOClient;
 import com.mmo.mmoserver.auth.SessionService;
+import com.mmo.mmoserver.mobs.Mob;
 import com.mmo.mmoserver.player.PlayerState;
 import com.mmo.mmoserver.websockets.NettyWebSocketServer;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +25,19 @@ public class GameEngine {
     private final NettyWebSocketServer nettyWebSocketServer;
     private final SessionService sessionService;
 
+    private final List<Mob> monsters = new ArrayList<>();
+
     public GameEngine(NettyWebSocketServer nettyWebSocketServer,
                       SessionService sessionService) {
         this.nettyWebSocketServer = nettyWebSocketServer;
         this.sessionService = sessionService;
 
+        addMob(Mob.create("mob_1", 4));
         start();
+    }
+
+    private synchronized void addMob(Mob mob) {
+        monsters.add(mob);
     }
 
     public synchronized void clearUsername(String username) {
@@ -64,6 +72,16 @@ public class GameEngine {
     }
 
     private void sendGameStateToPlayers() {
+        List<PlayerState> monsters = new ArrayList<>();
+        for (Mob monster : this.monsters) {
+            PlayerState playerState = new PlayerState();
+            playerState.setUsername(monster.getName());
+            playerState.setPx(monster.getPx());
+            playerState.setPy(monster.getPy());
+            playerState.setPz(monster.getPz());
+            monsters.add(playerState);
+        }
+
         userToPosition.forEach((username, position) -> {
             PlayerState toReturn = new PlayerState(position.getPx(), position.getPy(), position.getPz());
             userToPosition.forEach((u,p) -> {
@@ -74,6 +92,7 @@ public class GameEngine {
                     toReturn.getAnotherPlayers().add(toAdd);
                 }
             });
+            toReturn.setMonsters(monsters);
 
             String clientId = sessionService.getClientId(username);
             if (clientId != null) {
@@ -125,6 +144,17 @@ public class GameEngine {
             });
             for (String toAdd : usersToAddIdle) {
                 userToState.put(toAdd, "idle");
+            }
+
+            //mobs behaviour
+            for (Mob monster : monsters) {
+                for (Map.Entry<String, PlayerState> entry : userToPosition.entrySet()) {
+                    PlayerState player = entry.getValue();
+                    double mobPlayerDistance = Math.sqrt(Math.pow(monster.getPx() - player.getPx(), 2) + Math.pow(monster.getPz() - player.getPz(), 2));
+                    if (mobPlayerDistance < monster.getAggroRange()) {
+                        log.info("Monster {} is comming to {}", monster.getName(), player.getUsername());
+                    }
+                }
             }
 
             sendGameStateToPlayers();//todo: fix, because sending affects game loop time
